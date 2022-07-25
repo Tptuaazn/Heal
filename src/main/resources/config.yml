@@ -1,0 +1,30 @@
+settings:
+  join-heal:
+    enabled: false
+    delay: 10
+    
+  level-up:
+    enabled: false
+    level: 10
+
+messages:
+  join-heal:
+    true: "&7Toggled join heal to &aON"
+    false: "&7Toggled join heal to &cOFF"
+    
+  level-up:
+    true: "&7Toggled level up heal to &aON"
+    false: "&7Toggled level up heal to &cOFF"
+    
+  target:
+    unknown: "&c%target% is not online or unknown!"
+    healed: "&aYou have been healed by %healer%!"
+    value: "&aYou have been healed by %healer% with %value% health!"
+    
+  all:
+    no-player: "&cNo player(s) online!"
+    finish: "&aSucessfully healed for %healed% player(s)."
+    
+  healed: "&aYou have been healed!"
+  no-permission: "&cI'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error."
+  reload: "&aSuccessfully reload plugin!"

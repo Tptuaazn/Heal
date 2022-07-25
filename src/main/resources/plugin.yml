@@ -1,0 +1,8 @@
+name: Heal
+version: 0.0.1
+main: me.tptuaasn.plugin.Heal
+api-version: 1.13
+
+commands:
+  heal:
+    aliases: [h]
