@@ -47,7 +47,7 @@ public class Events implements Listener {
 		if (levelUp == false)
 			return;
 
-		if ((e.getNewLevel() - e.getOldLevel()) == config.getInt("settings.level-up.level"))
+		if ((e.getNewLevel() - e.getOldLevel()) >= config.getInt("settings.level-up.level"))
 			e.getPlayer().setHealth(e.getPlayer().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
 	}
 }
