@@ -23,7 +23,7 @@ messages:
     
   all:
     no-player: "&cNo player(s) online!"
-    finish: "&aSucessfully healed for %healed% player(s)."
+    finish: "&aSucessfully healed for %online% player(s)."
     
   healed: "&aYou have been healed!"
   no-permission: "&cI'm sorry, but you do not have permission to perform this command. Please contact the server administrators if you believe that this is in error."

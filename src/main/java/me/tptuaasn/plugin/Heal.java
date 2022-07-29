@@ -21,7 +21,11 @@ public class Heal extends JavaPlugin {
 		PluginCommand cmd = Bukkit.getPluginCommand("heal");
 		cmd.setExecutor(new Cmd(this));
 		cmd.setTabCompleter(new Cmd(this));
+
+
 	}
+
+
 
 	public static Heal getPlugin() {
 		return plugin;

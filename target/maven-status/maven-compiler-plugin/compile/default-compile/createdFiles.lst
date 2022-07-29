@@ -1,0 +1,5 @@
+me\tptuaasn\plugin\config\Config.class
+me\tptuaasn\plugin\Heal.class
+me\tptuaasn\plugin\Events.class
+me\tptuaasn\plugin\config\ConfigManager.class
+me\tptuaasn\plugin\Cmd.class

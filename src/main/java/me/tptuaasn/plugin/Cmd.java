@@ -2,6 +2,7 @@ package me.tptuaasn.plugin;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.bukkit.Bukkit;
@@ -55,19 +56,17 @@ public class Cmd implements CommandExecutor, TabCompleter {
 				if ((args[0].equalsIgnoreCase("*") || args[0].equalsIgnoreCase("all"))
 						&& hasPermission(sender, "heal.all")) {
 					Collection<? extends Player> online = Bukkit.getServer().getOnlinePlayers();
-					byte healed = 0;
 
-					if (online.size() > 0) {
+					if (!online.isEmpty()) {
 						for (Player players : online) {
 							if (isHealthFull(players))
 								continue;
 
 							players.setHealth(getMaxHealth(players));
-							healed++;
 						}
 
 						sender.sendMessage(color(
-								config.getString("messages.all.finish").replace("%healed%", String.valueOf(healed))));
+								config.getString("messages.all.finish").replace("%online%", String.valueOf(online))));
 						return true;
 					}
 
@@ -83,7 +82,7 @@ public class Cmd implements CommandExecutor, TabCompleter {
 				if (args[0].equalsIgnoreCase("toggle") && hasPermission(sender, "heal.toggle")) {
 					if (args.length >= 2) {
 						if (args[1].equalsIgnoreCase("join-heal")) {
-							if (config.getBoolean("settings.join-heal.enabled") == true) {
+							if (config.getBoolean("settings.join-heal.enabled")) {
 								config.set("settings.join-heal.enabled", false);
 								cf.saveConfig();
 								sender.sendMessage(color(config.getString("messages.join-heal.false")));
@@ -96,7 +95,7 @@ public class Cmd implements CommandExecutor, TabCompleter {
 						}
 
 						if (args[1].equalsIgnoreCase("level-up")) {
-							if (config.getBoolean("settings.level-up.enabled") == true) {
+							if (config.getBoolean("settings.level-up.enabled")) {
 								config.set("settings.level-up.enabled", false);
 								cf.saveConfig();
 								sender.sendMessage(color(config.getString("messages.level-up.false")));
@@ -107,10 +106,9 @@ public class Cmd implements CommandExecutor, TabCompleter {
 							}
 							return true;
 						}
-
-						sender.sendMessage("[Heal] /heal toggle <name>");
 						return true;
 					}
+					sender.sendMessage("[Heal] /heal toggle <name>");
 					return true;
 				}
 
@@ -159,18 +157,21 @@ public class Cmd implements CommandExecutor, TabCompleter {
 	public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
 
 		List<String> args0 = new ArrayList<String>();
-		List<String> args1 = new ArrayList<String>();
 
 		if (command.getName().equalsIgnoreCase("heal")) {
 			if (args.length == 1) {
-				args0.add("*");
-				args0.add("all");
-				args0.add("help");
-				args0.add("reload");
-				args0.add("toggle");
-				args0.add("player");
-
-				return args0;
+				if (sender.hasPermission("heal.all")) {
+					args0.add("*");
+					args0.add("all");
+				}
+				if (sender.hasPermission("heal.help"))
+					args0.add("help");
+				if (sender.hasPermission("heal.reload"))
+					args0.add("reload");
+				if (sender.hasPermission("heal.toggle"))
+					args0.add("toggle");
+				if (sender.hasPermission("heal.others"))
+					args0.add("player");
 			}
 
 			if (args[0].equalsIgnoreCase("player")) {
@@ -178,45 +179,32 @@ public class Cmd implements CommandExecutor, TabCompleter {
 					Player[] players = new Player[Bukkit.getServer().getOnlinePlayers().size()];
 					Bukkit.getServer().getOnlinePlayers().toArray(players);
 					for (int i = 0; i < players.length; i++) {
-						args1.add(players[i].getName());
+						args0.add(players[i].getName());
 					}
-					return args1;
+
+					if (args.length >= 3)
+						args0.add("<number>");
 				}
+
 			}
-			return null;
+			Collections.sort(args0);
+			return args0;
 		}
 		return null;
 	}
 
 	private boolean isNumber(String s) {
-		if (!s.matches("\\d+")) {
-			return false;
-		}
-		return true;
+		return s.matches("\\d+");
 	}
 
 	private double getMaxHealth(Player p) {
 		return p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
 	}
 
-	/**
-	 * Check the player's health is full or not
-	 *
-	 * @param p Who needs to be checked
-	 * @return true if player's health is full
-	 */
 	private boolean isHealthFull(Player p) {
-		return p.getHealth() == p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() ? true : false;
+		return p.getHealth() == p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
 	}
 
-	/**
-	 * Check if the player has permission to use the command. If not, a message will
-	 * be sent.
-	 *
-	 * @param s Represents whatever is sending the command
-	 * @param p permission to check
-	 * @return true if the player has that permission
-	 */
 	private boolean hasPermission(CommandSender s, String p) {
 		String noPermission = config.getString("messages.no-permission");
 

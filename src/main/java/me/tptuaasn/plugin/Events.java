@@ -25,7 +25,8 @@ public class Events implements Listener {
 		Player p = e.getPlayer();
 		double health = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
 
-		if (!config.getBoolean("settings.join-heal.enabled")) return;
+		if (!config.getBoolean("settings.join-heal.enabled"))
+			return;
 
 		BukkitScheduler scheduler = Bukkit.getScheduler();
 		scheduler.runTaskLater(plugin, task -> {
@@ -35,7 +36,7 @@ public class Events implements Listener {
 				return;
 			}
 
-			p.getPlayer().setHealth(health);
+			p.setHealth(health);
 
 		}, 20L * config.getLong("settings.join-heal.delay"));
 	}
@@ -43,11 +44,16 @@ public class Events implements Listener {
 	@EventHandler
 	private void onLevelUp(PlayerLevelChangeEvent e) {
 		Player p = e.getPlayer();
+		int level = config.getInt("settings.level-up.level");
+		int c = 0;
 
-		if (!config.getBoolean("settings.level-up.enabled"))
-			return;
+		for (int i = 0; i < level; i++) {
+			int lc = e.getNewLevel() - e.getOldLevel();
+			if(c >= level) break;
+			c += lc;
+		}
 
-		if ((e.getNewLevel() - e.getOldLevel()) >= config.getInt("settings.level-up.level"))
+		if (config.getBoolean("settings.level-up.enabled") && !p.isDead() && c >= level)
 			p.setHealth(p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
 	}
 }
