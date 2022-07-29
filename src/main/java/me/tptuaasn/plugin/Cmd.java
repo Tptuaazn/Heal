@@ -34,14 +34,14 @@ public class Cmd implements CommandExecutor, TabCompleter {
 
 		if (cmd.getName().equalsIgnoreCase("heal") && hasPermission(sender, "heal.use")) {
 			if (args.length == 0) {
-				if (!(sender instanceof Player)) {
-					sendHelpMessage(sender);
-					return true;
+				if (sender instanceof Player) {
+					Player p = (Player) sender;
+					p.setHealth(getMaxHealth(p));
+					p.sendMessage(color(config.getString("messages.healed")));
 				}
 
-				Player p = (Player) sender;
-				p.setHealth(getMaxHealth(p));
-				p.sendMessage(color(config.getString("messages.healed")));
+				sendHelpMessage(sender);
+				return true;
 			}
 
 			if (args.length >= 1) {
