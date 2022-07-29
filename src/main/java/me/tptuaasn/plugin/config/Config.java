@@ -1,4 +1,4 @@
-package me.tptuaasn.plugin;
+package me.tptuaasn.plugin.config;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,6 +11,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import com.google.common.base.Charsets;
 import com.tchristofferson.configupdater.ConfigUpdater;
+
+import me.tptuaasn.plugin.Heal;
 
 public class Config {
 

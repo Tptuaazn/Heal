@@ -4,6 +4,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import me.tptuaasn.plugin.config.Config;
+
 public class Heal extends JavaPlugin {
 
 	private static Config cf;

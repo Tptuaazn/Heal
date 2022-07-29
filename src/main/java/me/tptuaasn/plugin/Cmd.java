@@ -14,6 +14,9 @@ import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 
+import me.tptuaasn.plugin.config.Config;
+import me.tptuaasn.plugin.config.ConfigManager;
+
 public class Cmd implements CommandExecutor, TabCompleter {
 
 	private final Heal plugin;
@@ -24,22 +27,6 @@ public class Cmd implements CommandExecutor, TabCompleter {
 
 	public Cmd(Heal plugin) {
 		this.plugin = plugin;
-	}
-
-	private void reloadConfig() {
-		Heal.getCf().reloadConfig();
-		Heal.getCf().updateConfig();
-		config = Heal.getCf().getConfig();
-	}
-
-	private boolean hasPermission(CommandSender sender, String p) {
-		String noPermission = config.getString("messages.no-permission");
-		if (!sender.hasPermission(p)) {
-			sender.sendMessage(color(noPermission));
-			return false;
-		}
-
-		return true;
 	}
 
 	private void sendHelpMessage(CommandSender sender) {
@@ -58,74 +45,57 @@ public class Cmd implements CommandExecutor, TabCompleter {
 
 		config = Heal.getCf().getConfig();
 
-		if (cmd.getName().equalsIgnoreCase("heal")) {
-			if (!hasPermission(sender, "heal.use"))
-				return true;
-
+		if (cmd.getName().equalsIgnoreCase("heal") && hasPermission(sender, "heal.use")) {
 			if (args.length == 0) {
 				if (!(sender instanceof Player)) {
 					sendHelpMessage(sender);
 					return true;
 				}
+
 				Player p = (Player) sender;
-				p.setHealth(p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
+				p.setHealth(getMaxHealth(p));
 				p.sendMessage(color(config.getString("messages.healed")));
 			}
 
 			if (args.length >= 1) {
-				if (args[0].equalsIgnoreCase("reload")) {
-					if (!hasPermission(sender, "heal.reload"))
-						return true;
-
-					reloadConfig();
+				if (args[0].equalsIgnoreCase("reload") && hasPermission(sender, "heal.reload")) {
+					ConfigManager.reloadConfig();
 					sender.sendMessage(color(config.getString("messages.reload")));
 					return true;
 				}
 
-				if (args[0].equalsIgnoreCase("*") || args[0].equalsIgnoreCase("all")) {
-					if (!hasPermission(sender, "heal.all"))
-						return true;
-
+				if ((args[0].equalsIgnoreCase("*") || args[0].equalsIgnoreCase("all"))
+						&& hasPermission(sender, "heal.all")) {
 					Collection<? extends Player> online = Bukkit.getServer().getOnlinePlayers();
 					byte healed = 0;
 
-					if (online.size() <= 0) {
-						sender.sendMessage(color(config.getString("messages.all.no-player")));
+					if (online.size() > 0) {
+						for (Player players : online) {
+							if (isHealthFull(players))
+								continue;
+
+							players.setHealth(getMaxHealth(players));
+							healed++;
+						}
+
+						sender.sendMessage(color(
+								config.getString("messages.all.finish").replace("%healed%", String.valueOf(healed))));
 						return true;
 					}
-					for (Player players : online) {
-						health = players.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
 
-						if (players.getHealth() == health)
-							continue;
-
-						players.setHealth(health);
-						healed++;
-					}
-					sender.sendMessage(
-							color(config.getString("messages.all.finish").replace("%healed%", String.valueOf(healed))));
+					sender.sendMessage(color(config.getString("messages.all.no-player")));
 					return true;
 				}
 
-				if (args[0].equalsIgnoreCase("help")) {
-					if (!hasPermission(sender, "heal.help"))
-						return true;
-
+				if (args[0].equalsIgnoreCase("help") && hasPermission(sender, "heal.help")) {
 					sendHelpMessage(sender);
 					return true;
 				}
 
-				if (args[0].equalsIgnoreCase("toggle")) {
-					if (!hasPermission(sender, "heal.toggle"))
-						return true;
-
+				if (args[0].equalsIgnoreCase("toggle") && hasPermission(sender, "heal.toggle")) {
 					if (args.length >= 2) {
-
-						boolean joinHeal = config.getBoolean("settings.join-heal.enabled", false);
-						boolean levelUp = config.getBoolean("settings.level-up.enabled", false);
-
 						if (args[1].equalsIgnoreCase("join-heal")) {
-							if (joinHeal == true) {
+							if (config.getBoolean("settings.join-heal.enabled") == true) {
 								config.set("settings.join-heal.enabled", false);
 								cf.saveConfig();
 								sender.sendMessage(color(config.getString("messages.join-heal.false")));
@@ -138,7 +108,7 @@ public class Cmd implements CommandExecutor, TabCompleter {
 						}
 
 						if (args[1].equalsIgnoreCase("level-up")) {
-							if (levelUp == true) {
+							if (config.getBoolean("settings.level-up.enabled") == true) {
 								config.set("settings.level-up.enabled", false);
 								cf.saveConfig();
 								sender.sendMessage(color(config.getString("messages.level-up.false")));
@@ -157,10 +127,7 @@ public class Cmd implements CommandExecutor, TabCompleter {
 				}
 
 				if (args[0].equalsIgnoreCase("player")) {
-					if (args.length >= 2) {
-						if (!hasPermission(sender, "heal.others"))
-							return true;
-
+					if (args.length >= 2 && hasPermission(sender, "heal.others")) {
 						Player target = Bukkit.getPlayer(args[1]);
 
 						if (target == null) {
@@ -169,41 +136,22 @@ public class Cmd implements CommandExecutor, TabCompleter {
 							return true;
 						}
 
-						if (args.length >= 3) {
-							if (!args[1].matches("\\d+")) {
-								sender.sendMessage(color("&cOnly digits can be used"));
+						if (args.length >= 3 && isNumber(args[1])) {
+							if (!isHealthFull(target)) {
+								target.setHealth(Double.parseDouble(args[1]));
+								target.sendMessage(color(config.getString("messages.target.value")
+										.replace("%healer%", sender.getName()).replace("%value%", args[2])));
 								return true;
 							}
-
-							health = Double.parseDouble(args[1]);
-							double tHealth = target.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-
-							if (target.getHealth() == tHealth) {
-								sender.sendMessage(color("&cThis player is already full of health, no need to heal."));
-								return true;
-							}
-
-//							if (health > (tHealth)) {
-//								sender.sendMessage(
-//										color("&cThe value must be less than or equal to the player's maximum health. "
-//												+ tHealth));
-//								return true;
-//							}
-
-							target.setHealth(health);
-							target.sendMessage(color(config.getString("messages.target.value")
-									.replace("%healer%", sender.getName()).replace("%value%", args[2])));
 							return true;
 						}
 
-						health = target.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-
-						if (target.getHealth() == health) {
+						if (isHealthFull(target)) {
 							sender.sendMessage(color("&cThis player is already full of health, no need to heal."));
 							return true;
 						}
 
-						target.setHealth(health);
+						target.setHealth(getMaxHealth(target));
 						target.sendMessage(color(
 								config.getString("messages.target.healed").replace("%healer%", sender.getName())));
 						return true;
@@ -252,8 +200,47 @@ public class Cmd implements CommandExecutor, TabCompleter {
 		return null;
 	}
 
+	private boolean isNumber(String s) {
+		if (!s.matches("\\d+")) {
+			return false;
+		}
+		return true;
+	}
+
+	private double getMaxHealth(Player p) {
+		return p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+	}
+
+	/**
+	 * Check the player's health is full or not
+	 *
+	 * @param p Who needs to be checked
+	 * @return true if player's health is full
+	 */
+	private boolean isHealthFull(Player p) {
+		return p.getHealth() == p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue() ? true : false;
+	}
+
+	/**
+	 * Check if the player has permission to use the command. If not, a message will
+	 * be sent.
+	 *
+	 * @param s Represents whatever is sending the command
+	 * @param p permission to check
+	 * @return true if the player has that permission
+	 */
+	private boolean hasPermission(CommandSender s, String p) {
+		String noPermission = config.getString("messages.no-permission");
+
+		if (!s.hasPermission(p)) {
+			s.sendMessage(color(noPermission));
+			return false;
+		}
+
+		return true;
+	}
+
 	private String color(String string) {
-		// TODO Auto-generated method stub
 		return ChatColor.translateAlternateColorCodes('&', string);
 	}
 

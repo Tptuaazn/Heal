@@ -3,6 +3,7 @@ package me.tptuaasn.plugin;
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -21,33 +22,32 @@ public class Events implements Listener {
 
 	@EventHandler
 	private void onJoin(PlayerJoinEvent e) {
-		boolean joinHeal = config.getBoolean("settings.join-heal.enabled");
-		double health = e.getPlayer().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
-		long delay = config.getLong("settings.join-heal.delay");
-		
-		if (joinHeal == false)
-			return;
+		Player p = e.getPlayer();
+		double health = p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+
+		if (!config.getBoolean("settings.join-heal.enabled")) return;
 
 		BukkitScheduler scheduler = Bukkit.getScheduler();
 		scheduler.runTaskLater(plugin, task -> {
 
-			if (e.getPlayer().getHealth() == health) {
+			if (p.getHealth() == health) {
 				task.cancel();
 				return;
 			}
-			e.getPlayer().setHealth(health);
 
-		}, 20L * delay);
+			p.getPlayer().setHealth(health);
+
+		}, 20L * config.getLong("settings.join-heal.delay"));
 	}
 
 	@EventHandler
 	private void onLevelUp(PlayerLevelChangeEvent e) {
-		boolean levelUp = config.getBoolean("settings.level-up.enabled");
+		Player p = e.getPlayer();
 
-		if (levelUp == false)
+		if (!config.getBoolean("settings.level-up.enabled"))
 			return;
 
 		if ((e.getNewLevel() - e.getOldLevel()) >= config.getInt("settings.level-up.level"))
-			e.getPlayer().setHealth(e.getPlayer().getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
+			p.setHealth(p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
 	}
 }
