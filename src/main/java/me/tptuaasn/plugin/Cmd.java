@@ -23,21 +23,8 @@ public class Cmd implements CommandExecutor, TabCompleter {
 	private FileConfiguration config;
 	private Config cf = Heal.getCf();
 
-	private double health;
-
 	public Cmd(Heal plugin) {
 		this.plugin = plugin;
-	}
-
-	private void sendHelpMessage(CommandSender sender) {
-		sender.sendMessage(color("&e&l" + plugin.getName() + " - v" + plugin.getDescription().getVersion()));
-		sender.sendMessage("&8&n------------------------------------------------------");
-		sender.sendMessage(color("&f/heal &8- &7Heal yourself (Only player)"));
-		sender.sendMessage(color("&f/heal reload &8- &7Reload plugin"));
-		sender.sendMessage(color("&f/heal toggle &8- &7Reload plugin"));
-		sender.sendMessage(color("&f/heal help &8- &7List command (this)"));
-		sender.sendMessage(color("&f/heal player <name> <value> &8- &7Heal other players"));
-		sender.sendMessage("&8&n------------------------------------------------------");
 	}
 
 	@Override
@@ -60,6 +47,7 @@ public class Cmd implements CommandExecutor, TabCompleter {
 			if (args.length >= 1) {
 				if (args[0].equalsIgnoreCase("reload") && hasPermission(sender, "heal.reload")) {
 					ConfigManager.reloadConfig();
+					config = Heal.getCf().getConfig();
 					sender.sendMessage(color(config.getString("messages.reload")));
 					return true;
 				}
@@ -238,6 +226,17 @@ public class Cmd implements CommandExecutor, TabCompleter {
 		}
 
 		return true;
+	}
+
+	private void sendHelpMessage(CommandSender sender) {
+		sender.sendMessage(color("&e&l" + plugin.getName() + " - v" + plugin.getDescription().getVersion()));
+		sender.sendMessage("&8&n------------------------------------------------------");
+		sender.sendMessage(color("&f/heal &8- &7Heal yourself (Only player)"));
+		sender.sendMessage(color("&f/heal reload &8- &7Reload plugin"));
+		sender.sendMessage(color("&f/heal toggle &8- &7Reload plugin"));
+		sender.sendMessage(color("&f/heal help &8- &7List command (this)"));
+		sender.sendMessage(color("&f/heal player <name> <value> &8- &7Heal other players"));
+		sender.sendMessage("&8&n------------------------------------------------------");
 	}
 
 	private String color(String string) {
