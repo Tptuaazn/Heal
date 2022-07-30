@@ -32,6 +32,7 @@ public class Cmd implements CommandExecutor, TabCompleter {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 
 		config = Heal.getCf().getConfig();
+		String UNKNOWN = config.getString("messages.target.unknown");
 
 		if (cmd.getName().equalsIgnoreCase("heal") && hasPermission(sender, "heal.use")) {
 			if (args.length == 0) {
@@ -80,7 +81,7 @@ public class Cmd implements CommandExecutor, TabCompleter {
 				}
 
 				if (args[0].equalsIgnoreCase("toggle") && hasPermission(sender, "heal.toggle")) {
-					if (args.length >= 2) {
+					if (args.length == 2) {
 						if (args[1].equalsIgnoreCase("join-heal")) {
 							if (config.getBoolean("settings.join-heal.enabled")) {
 								config.set("settings.join-heal.enabled", false);
@@ -106,19 +107,20 @@ public class Cmd implements CommandExecutor, TabCompleter {
 							}
 							return true;
 						}
+					} else {
+						sender.sendMessage("[Heal] /heal toggle <name>");
 						return true;
 					}
-					sender.sendMessage("[Heal] /heal toggle <name>");
+					sender.sendMessage("[Heal] Invalid arguments.");
 					return true;
 				}
 
-				if (args[0].equalsIgnoreCase("player")) {
-					if (args.length >= 2 && hasPermission(sender, "heal.others")) {
+				if (args[0].equalsIgnoreCase("player") && hasPermission(sender, "heal.others")) {
+					if (args.length >= 2) {
 						Player target = Bukkit.getPlayer(args[1]);
 
 						if (target == null) {
-							sender.sendMessage(
-									color(config.getString("messages.target.unknown").replace("%target%", args[1])));
+							sender.sendMessage(color(UNKNOWN.replace("%target%", args[1])));
 							return true;
 						}
 
@@ -145,6 +147,36 @@ public class Cmd implements CommandExecutor, TabCompleter {
 					sender.sendMessage("[Heal] /heal player <name> <value>");
 					return true;
 				}
+
+				if (args[0].equalsIgnoreCase("set") && hasPermission(sender, "heal.set")) {
+					if (args.length >= 2) {
+						if (args[1].equalsIgnoreCase("maxhealth")) {
+							if (args.length >= 3) {
+								Player p = Bukkit.getServer().getPlayer(args[2]);
+
+								if (p == null) {
+									sender.sendMessage(color(UNKNOWN.replace("%target%", args[2])));
+									return true;
+								}
+								if (args.length == 4) {
+									if (!isNumber(args[3]))
+										return true;
+
+									setMaxHealth(p, Double.parseDouble(args[3]));
+									return true;
+								}
+								sender.sendMessage("[Heal] ..<health>");
+								return true;
+							}
+							sender.sendMessage("[Heal] ..<player> <health>");
+							return true;
+						}
+						sender.sendMessage("[Heal] ..<att> <player> <health>");
+						return true;
+					}
+					sender.sendMessage("[Heal] /heal set <att> <player> <health>.");
+					return true;
+				}
 				sender.sendMessage("Invalid arguments");
 				return true;
 			}
@@ -159,7 +191,7 @@ public class Cmd implements CommandExecutor, TabCompleter {
 		List<String> args0 = new ArrayList<String>();
 
 		if (command.getName().equalsIgnoreCase("heal")) {
-			if (args.length == 1) {
+			if (args.length >= 1) {
 				if (sender.hasPermission("heal.all")) {
 					args0.add("*");
 					args0.add("all");
@@ -172,6 +204,8 @@ public class Cmd implements CommandExecutor, TabCompleter {
 					args0.add("toggle");
 				if (sender.hasPermission("heal.others"))
 					args0.add("player");
+				if (sender.hasPermission("heal.set"))
+					args0.add("set");
 			}
 
 			if (args[0].equalsIgnoreCase("player")) {
@@ -182,11 +216,28 @@ public class Cmd implements CommandExecutor, TabCompleter {
 						args0.add(players[i].getName());
 					}
 
-					if (args.length >= 3)
+					if (args.length == 3)
 						args0.add("<number>");
 				}
 
 			}
+
+			if (args[0].equalsIgnoreCase("set")) {
+				if (args.length >= 2) {
+					args0.add("maxhealth");
+					if (args.length >= 3) {
+						Player[] players = new Player[Bukkit.getServer().getOnlinePlayers().size()];
+						Bukkit.getServer().getOnlinePlayers().toArray(players);
+						for (int i = 0; i < players.length; i++) {
+							args0.add(players[i].getName());
+						}
+						if (args.length == 4) {
+							args0.add("<health>");
+						}
+					}
+				}
+			}
+
 			Collections.sort(args0);
 			return args0;
 		}
@@ -199,6 +250,10 @@ public class Cmd implements CommandExecutor, TabCompleter {
 
 	private double getMaxHealth(Player p) {
 		return p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue();
+	}
+
+	private void setMaxHealth(Player p, double h) {
+		p.getAttribute(Attribute.GENERIC_MAX_HEALTH).setBaseValue(h);
 	}
 
 	private boolean isHealthFull(Player p) {
