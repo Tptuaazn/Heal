@@ -44,16 +44,15 @@ public class Events implements Listener {
 	@EventHandler
 	private void onLevelUp(PlayerLevelChangeEvent e) {
 		Player p = e.getPlayer();
-		int level = config.getInt("settings.level-up.level");
-		int c = 0;
+		int ol = e.getOldLevel();
+		int nl = e.getNewLevel();
 
-		for (int i = 0; i < level; i++) {
-			int lc = e.getNewLevel() - e.getOldLevel();
-			if(c >= level) break;
-			c += lc;
-		}
+		int i = 0;
+		if (nl > ol) i += (nl - ol);
 
-		if (config.getBoolean("settings.level-up.enabled") && !p.isDead() && c >= level)
+		if (config.getBoolean("settings.level-up.enabled") && i >= config.getInt("settings.level-up.level")) {
 			p.setHealth(p.getAttribute(Attribute.GENERIC_MAX_HEALTH).getValue());
+			i = 0;
+		}
 	}
 }
